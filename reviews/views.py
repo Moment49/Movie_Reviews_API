@@ -14,6 +14,8 @@ from rest_framework import filters
 from django.contrib.auth import get_user_model
 from rest_framework import generics
 from rest_framework.validators import ValidationError
+from reviews.pagination import CustomPagination
+from reviews.filters import ReviewFilter
 
 CustomUser = get_user_model()
 
@@ -21,23 +23,29 @@ CustomUser = get_user_model()
 class MovieReviewView(ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    # permission_classes = [IsAuthenticated, CustomPermission]
+    permission_classes = [IsAuthenticated, CustomPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['movie_title__title']
+    filterset_fields = ['movie_title__title', 'rating']
     search_fields = ['movie_title__title', 'rating']
     ordering_fields = ['created_at']
+    filterset_class = ReviewFilter
 
     def perform_create(self, serializer):
         return serializer.save(user=self.request.user)
     
-class MovieReviewByTitle(APIView):
+class MovieReviewByTitle(APIView, CustomPagination):
     permission_classes = [IsAuthenticated]
-
+   
     def get(self, request):
+        # Get request to return title from the query params
         title = request.GET.get('title')
-        print(title)
-        review_by_movie = Review.objects.filter(movie_title__title=title)
+
+        review_by_movie = Review.objects.filter(movie_title__title__icontains=title).order_by('-created_at')
+
+        # List to hold the moview_review iterable
         movie_review_list = []
+        
+        results = self.paginate_queryset(review_by_movie, request, view=self)
         for mv_t in review_by_movie:
             movie_title = MovieSerializer(mv_t.movie_title)
             user = UserSerializer(mv_t.user)
@@ -47,16 +55,17 @@ class MovieReviewByTitle(APIView):
                 "movie_tite":movie_title.data,
                 "content": mv_t.content,
                 "rating":mv_t.rating,
+                "created_at":mv_t.created_at,
                 "user":user.data,
             }  
             movie_review_list.append(movie_data)  
         print(movie_review_list)   
-        return Response({"data":movie_review_list})
+        return self.get_paginated_response(movie_review_list)
         
 
 class UserDetailView(APIView):
+    """This is the User Detail view to display all the user data"""
     permission_classes = [IsAuthenticated]
-
     def get(self, request, user_id=None):
         user = generics.get_object_or_404(CustomUser, pk=user_id)
         serializer = UserSerializer(user)
@@ -64,6 +73,7 @@ class UserDetailView(APIView):
     
 
 class UserDeleteView(GenericAPIView):
+    """This is the delete view for the user """
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
@@ -71,6 +81,8 @@ class UserDeleteView(GenericAPIView):
         user_obtained_id = CustomUser.objects.get(pk=user_id)
         user_req = self.request.user
         if user_req == user_obtained_id:
+            # Condidition to check if the request.user matches the user_id passed
+            # view-level permission check for the object.
             user_req.delete()
             return Response({"message":"user deleted"}, status=status.HTTP_204_NO_CONTENT)
         else:

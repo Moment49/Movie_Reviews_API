@@ -18,13 +18,21 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['email', 'first_name', 'last_name', 'username']
     
     def update(self, instance, validated_data):
+        # This method handles update of validated_data passed to the serializer
         email = validated_data.pop('email')
+        first_name = validated_data.pop('first_name')
+        last_name = validated_data.pop('last_name')
+        username = validated_data.pop('username')
         instance.email = email
+        instance.first_name = first_name
+        instance.last_name = last_name
+        instance.username = username
         instance.save()
         return instance
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    # This holds the nested serializer for the data relationships for both user and movie_title
     user = UserSerializer(read_only=True)
     movie_title = MovieSerializer()
     class Meta:
