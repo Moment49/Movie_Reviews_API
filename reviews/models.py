@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 
-# Get the current User model that is active
+# Get the current User model that is active from the settings
 CustomUser = get_user_model()
 
 
@@ -13,6 +13,7 @@ class Movies(models.Model):
         return f"{self.title}"
 
 class Review(models.Model):
+    # Create a choices tuple to hold the ratings (note: 1 is the data while '1' is the human readable-form to be displayed on dropdowns)
     MOVIE_RATING_CHOICES = [
         (1, '1'),
         (2, '2'),

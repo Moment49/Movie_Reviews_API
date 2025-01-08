@@ -7,7 +7,7 @@ from rest_framework.decorators import api_view
 from django.contrib.auth import authenticate, login
 from rest_framework_simplejwt.tokens import RefreshToken
 
-
+# Get the current User model that is active from the settings
 CustomUser = get_user_model()
 
 # Create your views here.

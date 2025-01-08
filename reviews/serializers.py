@@ -3,8 +3,9 @@ from reviews.models import Movies, Review
 from rest_framework import validators
 from django.contrib.auth import get_user_model
 
-CustomUser = get_user_model()
 
+# Get the current User model that is active from the settings
+CustomUser = get_user_model()
 
 class MovieSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,20 +55,25 @@ class ReviewSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
 
         if Review.objects.filter(user=user, movie_title=movie_title).exists():
+            # Checks if the user has already created a review for the movie and raises appropriate error
             raise validators.ValidationError("You can not review a movie twice")
-    
+
+        # Creates the review if conditions pass save to the db and return the instance to be used in the view response
         movie_review = Review.objects.create(movie_title=movie_title, **validated_data)
         movie_review.save()
 
         return movie_review
     
     def update(self, instance, validated_data):
+        # This method is called when the data has been validated and update is made to the db
+        # Checks made here are on the data-level
         content = validated_data.pop('content')
         rating = validated_data.pop('rating')
         movie_data = validated_data.pop('movie_title')
         title = movie_data['title']
        
         if Movies.objects.filter(title=title).exists():
+            # checks if the movie passed to the request exists before making the update
             instance.content = content
             instance.rating = rating
             instance.save()

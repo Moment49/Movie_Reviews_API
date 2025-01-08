@@ -17,6 +17,7 @@ from rest_framework.validators import ValidationError
 from reviews.pagination import CustomPagination
 from reviews.filters import ReviewFilter
 
+# Get the current User model that is active from the settings
 CustomUser = get_user_model()
 
 # Create your views here.
