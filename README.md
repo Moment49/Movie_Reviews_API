@@ -23,3 +23,5 @@
 # Endpoint: api/auth/token  (HTTP Method POST), 
 # Request: { “email”:”email”, “password”:”123”}
 # Response:Response: {“ refresh_token”:”token”, “access_token”:”token” } status_code is  200
+
+![alt text](<Screenshot (133).png>)
