@@ -28,7 +28,7 @@ def login_view(request):
             print(user)
             if user is not None:
                 login(request, user)
-                print("create the token for user")
+                # create the token for user
                 refresh = RefreshToken.for_user(user)
                 return Response({"message": "User successfully logged in", "user_data":serializer.data,'access_token':str(refresh.access_token),
                                   'refresh_token':str(refresh)}, 200)

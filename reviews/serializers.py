@@ -66,8 +66,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         rating = validated_data.pop('rating')
         movie_data = validated_data.pop('movie_title')
         title = movie_data['title']
-        # pk = self.context['request'].pk
-        # print(pk)
+       
         if Movies.objects.filter(title=title).exists():
             instance.content = content
             instance.rating = rating

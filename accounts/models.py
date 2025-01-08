@@ -42,3 +42,6 @@ class UserProfile(models.Model):
     bio = models.TextField(max_length=200)
     profile_picture = models.ImageField(upload_to='uploads/', blank=True, null=True)
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
+
+    def __str__(self):
+        return f"{self.user.email}"

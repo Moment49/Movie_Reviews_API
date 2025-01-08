@@ -23,7 +23,7 @@ CustomUser = get_user_model()
 class MovieReviewView(ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    # permission_classes = [IsAuthenticated, CustomPermission]
+    permission_classes = [IsAuthenticated, CustomPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['movie_title__title', 'rating']
     ordering_fields = ['created_at']
@@ -33,7 +33,7 @@ class MovieReviewView(ModelViewSet):
         return serializer.save(user=self.request.user)
     
 class MovieReviewByTitle(APIView, CustomPagination):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
    
     def get(self, request):
         # Get request to return title from the query params
@@ -68,6 +68,7 @@ class MovieReviewByTitle(APIView, CustomPagination):
 class UserDetailView(APIView):
     """This is the User Detail view to display all the user data"""
     permission_classes = [IsAuthenticated]
+
     def get(self, request, user_id=None):
         user = generics.get_object_or_404(CustomUser, pk=user_id)
         serializer = UserSerializer(user)
@@ -95,7 +96,7 @@ class UserUpdateView(GenericAPIView):
     permission_classes = [IsAuthenticated]
  
     def patch(self, request, pk=None):
-        # Method to partial update user records
+        # Method to partially update user records
         user = CustomUser.objects.get(email=request.user)
         user_pk = CustomUser.objects.get(pk=pk)
         if user == user_pk:
@@ -109,11 +110,11 @@ class UserUpdateView(GenericAPIView):
             return Response({'message': "Bad Request"},status=status.HTTP_400_BAD_REQUEST)
         
     def put(self, request, pk=None):
-        # Method to partial update user records
+        # Method to update user records
         user = CustomUser.objects.get(email=request.user)
         user_pk = CustomUser.objects.get(pk=pk)
         if user == user_pk:
-            serializer = UserSerializer(user, data=request.data, partial=True)
+            serializer = UserSerializer(user, data=request.data)
         
         if serializer.is_valid(raise_exception=True):
             serializer.save()
