@@ -23,10 +23,12 @@ class UserSerializer(serializers.ModelSerializer):
         first_name = validated_data.pop('first_name')
         last_name = validated_data.pop('last_name')
         username = validated_data.pop('username')
+        
         instance.email = email
         instance.first_name = first_name
         instance.last_name = last_name
         instance.username = username
+
         instance.save()
         return instance
 
