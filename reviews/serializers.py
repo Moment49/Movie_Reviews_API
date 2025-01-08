@@ -49,6 +49,12 @@ class ReviewSerializer(serializers.ModelSerializer):
         except Movies.DoesNotExist:
             movie_title = Movies.objects.create(title=movie_title)
             movie_title.save()
+
+        # Get the user from the request context
+        user = self.context['request'].user
+
+        if Review.objects.filter(user=user, movie_title=movie_title).exists():
+            raise validators.ValidationError("You can not review a movie twice")
     
         movie_review = Review.objects.create(movie_title=movie_title, **validated_data)
         movie_review.save()
@@ -58,9 +64,15 @@ class ReviewSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         content = validated_data.pop('content')
         rating = validated_data.pop('rating')
-        instance.content = content
-        instance.rating = rating
-
-        instance.save()
+        movie_data = validated_data.pop('movie_title')
+        title = movie_data['title']
+        # pk = self.context['request'].pk
+        # print(pk)
+        if Movies.objects.filter(title=title).exists():
+            instance.content = content
+            instance.rating = rating
+            instance.save()
+        else:
+            raise validators.ValidationError("Sorry we don't have any movie matching the title")
 
         return instance

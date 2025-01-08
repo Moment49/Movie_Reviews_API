@@ -23,9 +23,8 @@ CustomUser = get_user_model()
 class MovieReviewView(ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = [IsAuthenticated, CustomPermission]
+    # permission_classes = [IsAuthenticated, CustomPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['movie_title__title', 'rating']
     search_fields = ['movie_title__title', 'rating']
     ordering_fields = ['created_at']
     filterset_class = ReviewFilter
@@ -34,7 +33,7 @@ class MovieReviewView(ModelViewSet):
         return serializer.save(user=self.request.user)
     
 class MovieReviewByTitle(APIView, CustomPagination):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
    
     def get(self, request):
         # Get request to return title from the query params
@@ -44,22 +43,25 @@ class MovieReviewByTitle(APIView, CustomPagination):
 
         # List to hold the moview_review iterable
         movie_review_list = []
-        
-        results = self.paginate_queryset(review_by_movie, request, view=self)
+        # Paginate the query set 
+        self.paginate_queryset(review_by_movie, request, view=self)
+
         for mv_t in review_by_movie:
+            # Iterate through the the query set
             movie_title = MovieSerializer(mv_t.movie_title)
             user = UserSerializer(mv_t.user)
-           
+
+            # serialize the return data to a json format to return the paginated response    
             movie_data = {
                 "id": mv_t.id,
-                "movie_tite":movie_title.data,
+                "movie_tite":movie_title.data['title'],
                 "content": mv_t.content,
                 "rating":mv_t.rating,
                 "created_at":mv_t.created_at,
-                "user":user.data,
+                "user":user.data['email'],
             }  
             movie_review_list.append(movie_data)  
-        print(movie_review_list)   
+        
         return self.get_paginated_response(movie_review_list)
         
 
