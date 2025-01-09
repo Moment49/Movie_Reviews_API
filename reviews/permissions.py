@@ -4,6 +4,9 @@ from rest_framework import status
 
 class CustomPermission(BasePermission):
     def has_object_permission(self, request, view, obj):
+        if request.method in ['GET']:
+            return True
+        
         if obj.user == request.user:
             return True
         else:
