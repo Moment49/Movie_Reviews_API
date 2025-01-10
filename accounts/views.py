@@ -23,9 +23,8 @@ def login_view(request):
             # Access the validated data after the serializer validation passes
             email = serializer.validated_data.get('email')
             password = serializer.validated_data.get('password')
-            print(password)
+    
             user = authenticate(request, username=email, password=password)
-            print(user)
             if user is not None:
                 login(request, user)
                 # create the token for user

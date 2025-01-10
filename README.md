@@ -17,13 +17,9 @@
 #### Also the authentication token can be generated from the traditional login endpoint, here we use the django predefined authentication module (django.contrib.auth) to authenticate and login user upon login the jwt token is generated and sent to the frontend for feature requests. 
 #### Test the Authentication visit the login or auth-token  endpoint and make the request providing your username and password
 
-#### Endpoint: http://127.0.0.1:8000/api/auth/login/  (HTTP Method POST), 
-####  Request: { “email”:”test@gmail.com”, “password”:”123”}
-####  Response: {“message”: “User login successful”, "user_data": {“id”:id, “email”:”email”}, 'refresh_token':”token”, “access_token”:”token” } status_code is  200
+#### Endpoint: http://127.0.0.1:8000/api/auth/login/  (HTTP Method POST)
 
-####  Endpoint: http://127.0.0.1:8000/api/auth/token  (HTTP Method POST), 
-####  Request:{ “email”:”email”, “password”:”123”}
-####  Response: {“ refresh_token”:”token”, “access_token”:”token” } status_code is  200
+####  Endpoint: http://127.0.0.1:8000/api/auth/token  (HTTP Method POST)
 
 # Users Management CRUD Operations
 #### This manages the Users data and ensure that users can create read update and delete their own data. The following endpoints are available for the user to perform various action along with the sample request and response data. 
@@ -31,40 +27,19 @@
 
 ### Register Account
 #### Endpoint:  http://127.0.0.1:8000/api/auth/register/ (HTTP METHOD POST)
-#### Request: {“first_name”:”name”,”last_name”:”name”, “username”:”user”, “email”:”test@gmail.com”, “password”:”123”, “confirm_password”:”123”}
-#### Response: {“message”: “User account created successfully”} status_code is 201 
+
 
 #### Read User Details
 ### Request: http://127.0.0.1:8000/api/user/1/ (HTTP Method GET) 
-#### Response:{
-####    "user_details": {
-####        "email": "elvis@gmail.com",
-####        "first_name": "Elvis",
-####        "last_name": "Ibenacho",
-###        "username": "momentum"
-###    }}
+
 
 #### Update User Details
 ### Request Endpoint: http://127.0.0.1:8000/api/user/1/update/ (HTTP Method PUT OR PATCH) 
-#### Response:{
-####    "message": "user updated successfully",
-####    "user_details": {
-####        "email": "elvis@gmail.com",
-####        "first_name": "Elvis",
-####        "last_name": "Ibenacho",
-####        "username": "momentum"
-####            }}
+
 
 #### Delete User Details
 ### Request Endpoint: http://127.0.0.1:8000/api/user/1/update/ (HTTP Method PUT OR PATCH) 
-#### Response:{
-####    "message": "user updated successfully",
-####    "user_details": {
-####        "email": "elvis@gmail.com",
-####        "first_name": "Elvis",
-####        "last_name": "Ibenacho",
-####        "username": "momentum"
-####            }}
+
 
 # Movie Reviews Management CRUD Operation
 #### The movie review management basic CRUD endpoints as well as searching and filtering endpoints. The review table has a one-to-many relationship with the Movie and User table. This data relation ensures that multiple users can leave a review for a single movie and vice versa. To implement this CRUD operaion django rest_framework ModelViewset was use to implement the straight operation.
