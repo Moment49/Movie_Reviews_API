@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 
+
+
 # Get the current User model that is active from the settings
 CustomUser = get_user_model()
 
@@ -30,3 +32,18 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.content}"
+
+
+class LikeReviews(models.Model):
+    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name="likes")
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="likes")
+
+
+
+
+
+
+
+
+
+

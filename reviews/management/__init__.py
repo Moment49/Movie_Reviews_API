@@ -1,0 +1,1 @@
+commands = ['movie_command']

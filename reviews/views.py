@@ -4,7 +4,7 @@ from rest_framework.generics import GenericAPIView, UpdateAPIView
 from rest_framework.response import Response
 from reviews.serializers import ReviewSerializer, MovieSerializer, UserSerializer
 from rest_framework import status
-from reviews.models import Review, Movies
+from reviews.models import Review, LikeReviews
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
@@ -16,6 +16,7 @@ from rest_framework import generics
 from rest_framework.validators import ValidationError
 from reviews.pagination import CustomPagination
 from reviews.filters import ReviewFilter
+from rest_framework.decorators import action
 
 # Get the current User model that is active from the settings
 CustomUser = get_user_model()
@@ -29,6 +30,13 @@ class MovieReviewView(ModelViewSet):
     search_fields = ['movie_title__title', 'rating']
     ordering_fields = ['created_at']
     filterset_class = ReviewFilter
+
+    @action(detail=True, methods=['get'])
+    def like(self, request, pk=None):
+        print(self.get_object())
+        liked_review = LikeReviews.objects.create(user=request.user, review=self.get_object())
+        liked_review.save()
+        return Response({"message":"liked"})
 
     def perform_create(self, serializer):
         return serializer.save(user=self.request.user)

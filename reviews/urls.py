@@ -10,5 +10,5 @@ urlpatterns = [
     path('reviews/movies/', MovieReviewByTitle.as_view(), name="movie_review_by_title"),
     path('user/<int:user_id>/', UserDetailView.as_view(), name="user_detail_view"),
     path('user/<int:user_id>/delete/', UserDeleteView.as_view(), name="user_delete_view"),
-    path('user/<int:pk>/update/', UserUpdateView.as_view(), name="user_update_view")
+    path('user/<int:pk>/update/', UserUpdateView.as_view(), name="user_update_view"),
 ]+router.urls

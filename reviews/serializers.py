@@ -4,6 +4,7 @@ from rest_framework import validators
 from django.contrib.auth import get_user_model
 
 
+
 # Get the current User model that is active from the settings
 CustomUser = get_user_model()
 
@@ -43,24 +44,26 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ['id', 'movie_title', 'content', 'rating', 'user', 'created_at']
            
     def create(self, validated_data):
+        movie_data= validated_data.pop('movie_title')
+        movie_title = movie_data['title']
+        
         try:
-            movie_data= validated_data.pop('movie_title')
-            movie_title = movie_data['title']
-            movie_title = Movies.objects.get(title = movie_title)
+            movie_title = Movies.objects.get(title=movie_title)
+            print(movie_title)
         except Movies.DoesNotExist:
-            movie_title = Movies.objects.create(title=movie_title)
-            movie_title.save()
-
+            raise validators.ValidationError("Sorry can't review movie because we don't have such movies")    
+      
         # Get the user from the request context
         user = self.context['request'].user
 
         if Review.objects.filter(user=user, movie_title=movie_title).exists():
             # Checks if the user has already created a review for the movie and raises appropriate error
-            raise validators.ValidationError("You can not review a movie twice")
+            raise validators.ValidationError("Sorry you can not review a movie twice")
 
         # Creates the review if conditions pass save to the db and return the instance to be used in the view response
         movie_review = Review.objects.create(movie_title=movie_title, **validated_data)
         movie_review.save()
+            
 
         return movie_review
     
@@ -81,3 +84,6 @@ class ReviewSerializer(serializers.ModelSerializer):
             raise validators.ValidationError("Sorry we don't have any movie matching the title")
 
         return instance
+
+
+

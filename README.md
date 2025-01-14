@@ -11,6 +11,11 @@
 ####  MEsure that the Security middleware is installed as well contenttype to help handle security and auth for the api
 ####  Configure the (SQL)databasee to use the Mysql engine for more roboost scalability
 
+# INTEGRATION OF THIRD-PART API 
+#### A third part api (OMDBAPI) is intergrated to fetch the movie details particularly the title and store in the movies tables
+#### The operation involves fetching the movie through the api along with queried params.
+#### A custom management command is setup to run/trigger the handle() to excute in other to perform the action before running the server. 
+
 # AUTHENTICATION SETUP
 #### THE API makes use of the token based authentication framework called jwt (Json web token)
 #### This generates the token from an endpoint 'auth/token/' which the user can make use of for feature requests
