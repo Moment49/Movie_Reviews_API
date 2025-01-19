@@ -1,10 +1,10 @@
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.generics import GenericAPIView, UpdateAPIView
+from rest_framework.generics import GenericAPIView, UpdateAPIView, CreateAPIView
 from rest_framework.response import Response
-from reviews.serializers import ReviewSerializer, MovieSerializer, UserSerializer
+from reviews.serializers import ReviewSerializer, MovieSerializer, UserSerializer, CommentSerializer
 from rest_framework import status
-from reviews.models import Review, LikeReviews
+from reviews.models import Review, LikeReviews, ReviewComment
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
@@ -17,6 +17,7 @@ from rest_framework.validators import ValidationError
 from reviews.pagination import CustomPagination
 from reviews.filters import ReviewFilter
 from rest_framework.decorators import action
+from django.db.models import Count
 
 # Get the current User model that is active from the settings
 CustomUser = get_user_model()
@@ -34,13 +35,48 @@ class MovieReviewView(ModelViewSet):
     @action(detail=True, methods=['get'])
     def like(self, request, pk=None):
         print(self.get_object())
-        liked_review = LikeReviews.objects.create(user=request.user, review=self.get_object())
-        liked_review.save()
-        return Response({"message":"liked"})
+        likes_by_user = LikeReviews.objects.filter(user=request.user, review=self.get_object())
+        if likes_by_user.exists():
+            return Response({"message":"You have already liked this review"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            liked_review = LikeReviews.objects.create(user=request.user, review=self.get_object())
+            liked_review.save()
+        return Response({"message":"review liked"})
+    
+    @action(detail=True, methods=['get'])
+    def unlike(self, request, pk=None):
+        print(self.get_object())
+        likes_by_user = LikeReviews.objects.get(user=request.user, review=self.get_object())
+        if likes_by_user:
+            likes_by_user.delete()
+        
+        return Response({"message": "review unliked"})
 
     def perform_create(self, serializer):
         return serializer.save(user=self.request.user)
-    
+
+class MostLikedReviewByMovie(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, movie_id=None):
+        # We use the anotate to get the agregate count for the number of likes for reviews based on a particular movie(likes are sorted)
+        reviews = Review.objects.annotate(num_like=Count("likes")).filter(movie_title=movie_id).order_by('-num_like')
+        review_list = []
+        for review in reviews:
+            # Serialize the review data and retrieve the necessary details to be displayed
+            serializer = ReviewSerializer(review)
+            most_review_likes_data = {
+                "review_id": serializer.data['id'],
+                "movie_title":serializer.data['movie_title']['title'],
+                "content":serializer.data['content'],
+                "rating": serializer.data['rating'],
+                "user": serializer.data['user']['email'],
+                "created_at": serializer.data['created_at'], 
+                "likes_count":review.num_like
+            }
+            review_list.append(most_review_likes_data)
+        return Response({"review_data":f"{review_list}"})
+
+
 class MovieReviewByTitle(APIView, CustomPagination):
     permission_classes = [IsAuthenticated]
    
@@ -103,13 +139,20 @@ class UserDeleteView(GenericAPIView):
 class UserUpdateView(GenericAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
- 
+    
+
     def patch(self, request, pk=None):
+        return self.update_user(request, pk, partial=True)
+        
+    def put(self, request, pk=None):
+        return self.update_user(request, pk, partial=False)
+
+    def update_user(self, request, pk, partial):
         # Method to partially update user records
         user = CustomUser.objects.get(email=request.user)
         user_pk = CustomUser.objects.get(pk=pk)
         if user == user_pk:
-            serializer = UserSerializer(user, data=request.data, partial=True)
+            serializer = UserSerializer(user, data=request.data, partial=partial)
         
         if serializer.is_valid(raise_exception=True):
             serializer.save()
@@ -118,19 +161,39 @@ class UserUpdateView(GenericAPIView):
             print("Bad request")
             return Response({'message': "Bad Request"},status=status.HTTP_400_BAD_REQUEST)
         
-    def put(self, request, pk=None):
-        # Method to update user records
-        user = CustomUser.objects.get(email=request.user)
-        user_pk = CustomUser.objects.get(pk=pk)
-        if user == user_pk:
-            serializer = UserSerializer(user, data=request.data)
+
+class ReviewCommentCreateView(APIView):
+    serializer_class = CommentSerializer
+    # permission_classes = [IsAuthenticated]
+
+    def get(self, request, review_id=None):
+        review = Review.objects.get(pk=review_id)
+       
+        # user = request.user 
+        reviews = ReviewComment.objects.get(review=review)
+        print(reviews)
+        if reviews:
+            serializer = CommentSerializer(reviews)
+            return Response({"message": serializer.data})
         
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response({'message': f'user updated successfully', "user_details":serializer.data},status=status.HTTP_200_OK)
-        else:
-            print("Bad request")
-            return Response({'message': "Bad Request"},status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "No comments for review"})
+            
+        
+        
+    # def post(self, request, review_id=None):
+    #     if review_id:
+    #         review = Review.objects.get(pk=review_id)
+    #         user = request.user
+    #         reviews = ReviewComment.objects.get(user=1, review=review)
+
+    #         serializer = CommentSerializer(reviews, data=request.data)
+    #         if serializer.is_valid(raise_exception=True):
+    #             serializer.save()
+    #             return Response({"message":serializer.data})
+            
+
+
+
 
     
 

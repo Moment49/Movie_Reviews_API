@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework.validators import ValidationError
+from accounts.models import UserProfile
+from reviews.models import Review
 
 CustomUser = get_user_model()
 
@@ -37,3 +39,40 @@ class RegisterationSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    profile_data = serializers.SerializerMethodField()
+    bio = serializers.CharField(write_only=True)
+    profile_picture = serializers.ImageField(write_only=True)
+    class Meta:
+        model = UserProfile
+        fields = ['bio', 'profile_picture', 'profile_data']
+
+    def get_profile_data(self, obj):
+        reviews = Review.objects.filter(user=obj.user)
+        review_data_list = []
+        for review in reviews:
+            review_data = {
+                "id":review.id,
+                "content": review.content,
+                "rating": review.rating,
+                "created_at": review.created_at
+            }
+            review_data_list.append(review_data)
+        profile_data = {    "first_name":obj.user.first_name, 
+                            "last_name": obj.user.last_name,
+                            "email":obj.user.email,
+                            "bio": obj.bio,
+                            "profile_picture":obj.profile_picture.url,
+                            "my_reviews":review_data_list
+                        }
+        return profile_data
+    
+    def update(self, instance, validated_data):
+        instance.bio = validated_data.get('bio', instance.bio)
+        instance.profile_picture = validated_data.get('profile_picture', instance.profile_picture)
+
+        instance.save()
+        print(instance)
+        return instance

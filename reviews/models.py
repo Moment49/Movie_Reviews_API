@@ -38,6 +38,20 @@ class LikeReviews(models.Model):
     review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name="likes")
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="likes")
 
+    def __str__(self):
+        return f"{self.review} {self.user}"
+
+
+class ReviewComment(models.Model):
+    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='comments')
+    content = models.TextField(max_length=200)
+    created_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.review} {self.user} {self.content}"
+
 
 
 

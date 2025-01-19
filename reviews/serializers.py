@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from reviews.models import Movies, Review
+from reviews.models import Movies, Review, ReviewComment
 from rest_framework import validators
 from django.contrib.auth import get_user_model
 
@@ -21,15 +21,10 @@ class UserSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         # This method handles update of validated_data passed to the serializer
-        email = validated_data.pop('email')
-        first_name = validated_data.pop('first_name')
-        last_name = validated_data.pop('last_name')
-        username = validated_data.pop('username')
-        
-        instance.email = email
-        instance.first_name = first_name
-        instance.last_name = last_name
-        instance.username = username
+        instance.email = validated_data.get('email', instance.email)
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.username = validated_data.get('username', instance.username)
 
         instance.save()
         return instance
@@ -70,20 +65,24 @@ class ReviewSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         # This method is called when the data has been validated and update is made to the db
         # Checks made here are on the data-level
-        content = validated_data.pop('content')
-        rating = validated_data.pop('rating')
         movie_data = validated_data.pop('movie_title')
         title = movie_data['title']
        
         if Movies.objects.filter(title=title).exists():
             # checks if the movie passed to the request exists before making the update
-            instance.content = content
-            instance.rating = rating
+            instance.content = validated_data.get('content', instance.content)
+            instance.rating = validated_data.get('rating', instance.rating)
             instance.save()
         else:
             raise validators.ValidationError("Sorry we don't have any movie matching the title")
 
         return instance
 
+class CommentSerializer(serializers.ModelSerializer):
+    review = ReviewSerializer()
+    user = UserSerializer()
+    class Meta:
+        model = ReviewComment
+        fields = ['id', 'review', 'user', 'content', 'created_at']
 
 
