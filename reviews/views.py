@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.generics import GenericAPIView, UpdateAPIView, CreateAPIView
+from rest_framework.generics import GenericAPIView, DestroyAPIView, ListCreateAPIView
 from rest_framework.response import Response
 from reviews.serializers import ReviewSerializer, MovieSerializer, UserSerializer, CommentSerializer
 from rest_framework import status
@@ -139,6 +139,7 @@ class UserDeleteView(GenericAPIView):
 class UserUpdateView(GenericAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+    queryset = CustomUser.objects.all()
     
 
     def patch(self, request, pk=None):
@@ -162,34 +163,70 @@ class UserUpdateView(GenericAPIView):
             return Response({'message': "Bad Request"},status=status.HTTP_400_BAD_REQUEST)
         
 
-class ReviewCommentCreateView(APIView):
+class ReviewCommentCreateView(ListCreateAPIView):
+    queryset = ReviewComment.objects.all()
     serializer_class = CommentSerializer
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, CustomPermission]
 
-    def get(self, request, review_id=None):
+    def get(self, request, review_id=None, *args, **kwargs):
         review = Review.objects.get(pk=review_id)
-       
-        # user = request.user 
-        reviews = ReviewComment.objects.get(review=review)
-        print(reviews)
+        reviews = ReviewComment.objects.filter(review=review)
         if reviews:
-            serializer = CommentSerializer(reviews)
-            return Response({"message": serializer.data})
-        
-        return Response({"message": "No comments for review"})
+            serializer = CommentSerializer(reviews, many=True)
+            return Response({"data": serializer.data})
+        return Response({"message": "No comments for review"}, status=status.HTTP_204_NO_CONTENT)
             
-        
-        
-    # def post(self, request, review_id=None):
-    #     if review_id:
-    #         review = Review.objects.get(pk=review_id)
-    #         user = request.user
-    #         reviews = ReviewComment.objects.get(user=1, review=review)
+    def post(self, request, review_id=None, *args, **kwargs):
+        review_data_id = request.data['review']
+        if review_id != review_data_id:
+            return Response({"error":"Review with id passed does not match"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            try:
+                Review.objects.get(pk=review_id)
+            except Review.DoesNotExist:
+                raise ValidationError("Review with id does not exist")
+        serializer = self.get_serializer(data=request.data, context={"request":request})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response({"data":serializer.data}, status=status.HTTP_201_CREATED)    
 
-    #         serializer = CommentSerializer(reviews, data=request.data)
-    #         if serializer.is_valid(raise_exception=True):
-    #             serializer.save()
-    #             return Response({"message":serializer.data})
+class ReviewCommentUpdateView(GenericAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated, CustomPermission]
+    queryset = ReviewComment.objects.all()
+
+    def put(self, request, pk=None, review_id=None):
+        # Get the comment obj which will trigger the obj-level permission check 
+        review_comment = self.get_object()
+        # Get the review from the request body and check if it matches with the path params passed
+        review_data_id = request.data['review']
+        if review_id != review_data_id:
+            return Response({"error":"Sorry!! this review does not match with id specified"}, status=status.HTTP_400_BAD_REQUEST)
+        # Extra validation check to if the review is associated with the comment to be updated
+        review = Review.objects.get(pk=review_id)
+        if review.id != review_comment.review.id:
+            return Response({"error":"Sorry this comment is not associated with the specified review"}, status=status.HTTP_400_BAD_REQUEST)
+    
+        serializer = CommentSerializer(review_comment, data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response({"message":"updated successfully", 'data':serializer.data}, status=status.HTTP_200_OK)
+        
+class ReviewCommentDeleteView(DestroyAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated, CustomPermission]
+    queryset = ReviewComment.objects.all()
+
+    def destroy(self, request, pk=None, review_id=None, *args, **kwargs):
+        instance = self.get_object()
+        try:
+            review = Review.objects.get(pk=review_id)
+        except Review.DoesNotExist:
+            return Response({"error":f"Review with id {review_id} does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        self.perform_destroy(instance)
+        return Response({"message":f"comment `{instance.content}`successfully deleted"}, status=status.HTTP_204_NO_CONTENT)
+            
             
 
 

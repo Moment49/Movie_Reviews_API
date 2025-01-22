@@ -17,7 +17,7 @@ class MovieSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model= CustomUser
-        fields = ['email', 'first_name', 'last_name', 'username']
+        fields = ['id', 'email', 'first_name', 'last_name', 'username']
     
     def update(self, instance, validated_data):
         # This method handles update of validated_data passed to the serializer
@@ -79,10 +79,36 @@ class ReviewSerializer(serializers.ModelSerializer):
         return instance
 
 class CommentSerializer(serializers.ModelSerializer):
-    review = ReviewSerializer()
-    user = UserSerializer()
+    review = serializers.PrimaryKeyRelatedField(many=False, queryset=Review.objects.all())
+    user = UserSerializer(read_only=True)
+ 
     class Meta:
         model = ReviewComment
         fields = ['id', 'review', 'user', 'content', 'created_at']
+        
+    def create(self, validated_data):
+        content = validated_data.pop('content')
+        review = validated_data.pop('review')
+        user = self.context['request'].user
+        comment = ReviewComment.objects.create(review=review, user=user, content=content)
+
+        comment.save()
+        return comment
+    
+    def update(self, instance, validated_data):
+        instance.content = validated_data.get('content', instance.content)
+
+        instance.save()
+        return instance
+        
+        
+
+
+    
+    
+      
+    
+    
+   
 
 
